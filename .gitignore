@@ -1,0 +1,4 @@
+.pio
+.vscode
+*.pem
+ciotc_config.h
