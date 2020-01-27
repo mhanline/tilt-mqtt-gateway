@@ -1,4 +1,6 @@
 .pio
 .vscode
 *.pem
+*.old
 ciotc_config.h
+tilt_mqtt_gateway_config.h

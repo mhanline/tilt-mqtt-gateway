@@ -1,17 +1,19 @@
 /******************************************************************************
 Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
  *****************************************************************************/
-#include "esp32-mqtt.h"
+#include <universal-mqtt.h>
 #include <BLEDevice.h>
 
 // User Settings
-const int bleScanTime = 5;  // Duration to scan for bluetooth devices (in seconds).
-const int publishTime = 3570000; // PubSub publish interval (in ms)
-const bool Celsius = true;
-int repeatColour = 0;
-float DevGravityFormatted;
-String DevColour;
-float DevTemp;
+
+#define bleScanTime (int)5 // Duration to scan for bluetooth devices in seconds
+#define publishTime (int)3570000 // PubSub publish interval (in ms)
+#define Celsius true
+
+int repeatColour = 0;  //To-Do: Figure this bit out
+float* DevGravity;
+char* DevColour[7];
+float* DevTemp;
 unsigned long lastMillis = 0;
 BLEScan* pBLEScan;
 
@@ -21,76 +23,76 @@ void printLocalTime() {
     Serial.println("Failed to obtain time");
     return;
   }
-  Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");
+  Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");  //To-Do: Figure this out
+}
+
+void messageReceived(String &topic, String &payload) {
+  Serial.println("incoming: " + topic + " - " + payload);
 }
 
 int parseTilt(String DevData) {
-  String DevTempData, DevGravityData;
   int colourInt;
-  float DevGravity;
-
   // Determine the Colour
   colourInt = DevData.substring(6, 7).toInt();
-
   switch (colourInt) {
     case 1:
-      DevColour = "Red";
+      strcpy(*DevColour,"Red");
       break;
     case 2:
-      DevColour = "Green";
+      strcpy(*DevColour,"Green");
       break;
     case 3:
-      DevColour = "Black";
+      strcpy(*DevColour,"Black");
       break;
     case 4:
-      DevColour = "Purple";
+      strcpy(*DevColour,"Purple");
       break;
     case 5:
-      DevColour = "Orange";
+      strcpy(*DevColour,"Orange");
       break;
     case 6:
-      DevColour = "Blue";
+      strcpy(*DevColour,"Blue");
       break;
     case 7:
-      DevColour = "Yellow";
+      strcpy(*DevColour,"Yellow");
       break;
     case 8:
-      DevColour = "Pink";
+      strcpy(*DevColour,"Pink");
       break;
   }
-
+  // To-Do: Use bitwise check here maybe?
+  // Looks like it is checking if tilt has been detected already and ignores if so
+  // But it doesn't set repeatcolour anywhere
   if (repeatColour != 0 && repeatColour != colourInt) {
-    Serial.print(DevColour);
+    Serial.print("Device Colour detected:");
+    Serial.println(*DevColour);
     Serial.println(" Tilt is being ignored.");
     return 0;
   }
 
   // Get the temperature
-  DevTempData = DevData.substring(32, 36);
-  DevTemp = strtol(DevTempData.c_str(), NULL, 16); // Temp in Freedumb units
+  // DevTempData = DevData.substring(32, 36);
+  *DevTemp = strtol(DevData.substring(32, 36).c_str(), NULL, 16);
 
   // Get the gravity
-  DevGravityData = DevData.substring(36, 40);
-  DevGravity = strtol(DevGravityData.c_str() , NULL, 16);
+  // DevGravityData = DevData.substring(36, 40);
+  *DevGravity = strtol(DevData.substring(36, 40).c_str(), NULL, 16) / 1000;
 
-  Serial.println("--------------------------------");
   Serial.print("Colour: ");
-  Serial.println(DevColour);
+  Serial.print("Device Colour detected:");
+  Serial.println(*DevColour);
   Serial.print("Temp: ");
-  if (Celsius) {
-    DevTemp = (DevTemp-32.0) * (5.0/9.0);
-    Serial.print(DevTemp);
-    Serial.println(" C");
-  }
-  else {
-    Serial.print(DevTemp);
-    Serial.println(" F");
-  }
+  #ifdef Celsius
+  *DevTemp = (*DevTemp-32.0) * (5.0/9.0);
+  Serial.print(*DevTemp);
+  Serial.println(" C");
+  #else
+  Serial.print(DevTemp);
+  Serial.println(" F");
+  #endif
   Serial.print("Gravity: ");
-  DevGravityFormatted = (DevGravity / 1000);
-  Serial.println(DevGravityFormatted, 3);
+  Serial.println(*DevGravity, 3);
   Serial.println(DevData);
-  Serial.println("--------------------------------");
   return 2;
 }
 
@@ -107,15 +109,13 @@ void loop() {
   if (!mqttClient->connected()) {
     connect();
   }
-  if (millis() - lastMillis > publishTime) {
+  if ((millis() - lastMillis) > publishTime) {
     lastMillis = millis();
     int deviceCount, tiltCount = 0;
     int colourFound = 1;
     BLEDevice::init("");
     pBLEScan = BLEDevice::getScan();
     pBLEScan->setActiveScan(true);
-    Serial.println();
-    Serial.println("Scanning...");
     BLEScanResults foundDevices = pBLEScan->start(bleScanTime);
     deviceCount = foundDevices.getCount();
     Serial.print(deviceCount);
@@ -124,7 +124,8 @@ void loop() {
     BLEDevice::deinit(0);
     for (uint32_t i = 0; i < deviceCount; i++) {
       BLEAdvertisedDevice Device = foundDevices.getDevice(i);
-      String DevString, DevData;
+      String DevString;
+      String DevData;
       DevString = Device.toString().c_str();
       DevData = DevString.substring(63);
 
@@ -144,19 +145,19 @@ void loop() {
     }
     if (!tiltCount || !colourFound) {
       Serial.println("No Tilts Found.");
-      // Do something like quickly search again?
+      // To-Do: Quickly search again?
     }
-    // To-Do: Change Colour to colour
+    // To-Do: Move this up to send one message per tilt. Can't handle multiple tilts
     else {
       String payload;
       payload += F("{\"currentTime\":\"");
       payload += F("1970-01-01 00:00:01");
       payload += F("\",\"SG\":\"");
-      payload += String(DevGravityFormatted, 3);
+      payload += *DevGravity;  //To-Do ,3 etc
       payload += F("\",\"colour\":\"");
-      payload += String(DevColour);
+      payload += *DevColour;
       payload += F("\",\"temperature\":\"");
-      payload += String(DevTemp, 1) + "\"}";
+      payload += String(*DevTemp, 1) + "\"}"; //To-Do: Remove String
       publishTelemetry(payload);
       Serial.println(payload);
     }
