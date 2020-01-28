@@ -3,6 +3,7 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
  *****************************************************************************/
 #include <universal-mqtt.h>
 #include <BLEDevice.h>
+#include "Arduino.h"
 
 // User Settings
 
@@ -10,7 +11,7 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 #define publishTime (int)3570000 // PubSub publish interval (in ms)
 #define Celsius true
 
-int repeatColour = 0;  //To-Do: Figure this bit out
+int repeatColour = 0;
 float* DevGravity;
 char* DevColour[7];
 float* DevTemp;
@@ -23,7 +24,7 @@ void printLocalTime() {
     Serial.println("Failed to obtain time");
     return;
   }
-  Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");  //To-Do: Figure this out
+  Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");
 }
 
 void messageReceived(String &topic, String &payload) {
@@ -60,9 +61,6 @@ int parseTilt(String DevData) {
       strcpy(*DevColour,"Pink");
       break;
   }
-  // To-Do: Use bitwise check here maybe?
-  // Looks like it is checking if tilt has been detected already and ignores if so
-  // But it doesn't set repeatcolour anywhere
   if (repeatColour != 0 && repeatColour != colourInt) {
     Serial.print("Device Colour detected:");
     Serial.println(*DevColour);
@@ -145,21 +143,21 @@ void loop() {
     }
     if (!tiltCount || !colourFound) {
       Serial.println("No Tilts Found.");
-      // To-Do: Quickly search again?
     }
-    // To-Do: Move this up to send one message per tilt. Can't handle multiple tilts
     else {
-      String payload;
-      payload += F("{\"currentTime\":\"");
-      payload += F("1970-01-01 00:00:01");
-      payload += F("\",\"SG\":\"");
-      payload += *DevGravity;  //To-Do ,3 etc
-      payload += F("\",\"colour\":\"");
-      payload += *DevColour;
-      payload += F("\",\"temperature\":\"");
-      payload += String(*DevTemp, 1) + "\"}"; //To-Do: Remove String
-      publishTelemetry(payload);
-      Serial.println(payload);
+      char strPayload[120];
+      char strDevGravity[8];
+      dtostrf(*DevGravity, 4, 3, strDevGravity);
+      char strDevTemp[8];
+      dtostrf(*DevTemp, 4, 2, strDevTemp);
+      sprintf(strPayload, 
+      "{\"currentTime\":\"1970-01-01 00:00:01\","
+      "\"SG\":\"%s\","
+      "\"colour\":\"%s\","
+      "\"temperature\":\"%s\"}"
+      , strDevGravity, *DevColour, strDevTemp);
+      publishTelemetry(strPayload);
+      Serial.println(strPayload);
     }
   }
 }
