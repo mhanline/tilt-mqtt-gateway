@@ -1,9 +1,15 @@
 /******************************************************************************
 Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
  *****************************************************************************/
-#include <universal-mqtt.h>
+#define DEBUGMACROS
+#include <DebugMacros.h>
 #include <BLEDevice.h>
-#include "Arduino.h"
+#include <Arduino.h>
+#include "universal-mqtt.h"
+#include "tilt-gateway.pb.h"
+#include "pb_common.h"
+#include "pb.h"
+#include "pb_encode.h"
 
 // User Settings
 
@@ -13,6 +19,7 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 
 int repeatColour = 0;
 float* DevGravity;
+uint8_t* devColourNum;
 char* DevColour[7];
 float* DevTemp;
 unsigned long lastMillis = 0;
@@ -21,21 +28,21 @@ BLEScan* pBLEScan;
 void printLocalTime() {
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
+    DPRINTF("Failed to obtain time");
     return;
   }
-  Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");
+  DPRINTLN(&timeinfo, "%Y-%m-%d %H:%M:%S");
 }
 
 void messageReceived(String &topic, String &payload) {
-  Serial.println("incoming: " + topic + " - " + payload);
+  DPRINTLN("incoming: " + topic + " - " + payload);
 }
 
 int parseTilt(String DevData) {
-  int colourInt;
+  // int colourInt;
   // Determine the Colour
-  colourInt = DevData.substring(6, 7).toInt();
-  switch (colourInt) {
+  *devColourNum = DevData.substring(6, 7).toInt();
+/*  switch (colourInt) {
     case 1:
       strcpy(*DevColour,"Red");
       break;
@@ -62,11 +69,11 @@ int parseTilt(String DevData) {
       break;
   }
   if (repeatColour != 0 && repeatColour != colourInt) {
-    Serial.print("Device Colour detected:");
-    Serial.println(*DevColour);
-    Serial.println(" Tilt is being ignored.");
+    DPRINT("Device Colour detected:");
+    DPRINTLN(*DevColour);
+    DPRINTLNF(" Tilt is being ignored.");
     return 0;
-  }
+  } */
 
   // Get the temperature
   // DevTempData = DevData.substring(32, 36);
@@ -76,21 +83,20 @@ int parseTilt(String DevData) {
   // DevGravityData = DevData.substring(36, 40);
   *DevGravity = strtol(DevData.substring(36, 40).c_str(), NULL, 16) / 1000;
 
-  Serial.print("Colour: ");
-  Serial.print("Device Colour detected:");
-  Serial.println(*DevColour);
-  Serial.print("Temp: ");
+  DPRINTF("Device Colour detected:");
+  DPRINTLN(*DevColour);
+  DPRINTF("Temp: ");
   #ifdef Celsius
   *DevTemp = (*DevTemp-32.0) * (5.0/9.0);
-  Serial.print(*DevTemp);
-  Serial.println(" C");
+  DPRINT(*DevTemp);
+  DPRINTLNF(" C");
   #else
-  Serial.print(DevTemp);
-  Serial.println(" F");
+  DPRINT(DevTemp);
+  DPRINTLNF(" F");
   #endif
-  Serial.print("Gravity: ");
-  Serial.println(*DevGravity, 3);
-  Serial.println(DevData);
+  DPRINTF("Gravity: ");
+  DPRINTLN(*DevGravity, 3);
+  DEBUG_PRINTLN(DevData);
   return 2;
 }
 
@@ -116,8 +122,8 @@ void loop() {
     pBLEScan->setActiveScan(true);
     BLEScanResults foundDevices = pBLEScan->start(bleScanTime);
     deviceCount = foundDevices.getCount();
-    Serial.print(deviceCount);
-    Serial.println(" Devices Found.");
+    DPRINT(deviceCount);
+    DPRINTLNF(" Devices Found.");
     pBLEScan->stop();
     BLEDevice::deinit(0);
     for (uint32_t i = 0; i < deviceCount; i++) {
@@ -129,9 +135,9 @@ void loop() {
 
       if (DevData.substring(7, 32) == "0c5b14b44b5121370f02d74de") { // Tilt found
         tiltCount++;
-        Serial.print("Device #");
-        Serial.print(i);
-        Serial.println(" is a Tilt");
+        DPRINTF("Device #");
+        DPRINT(i);
+        DPRINTLNF(" is a Tilt");
         int tiltSuccess = parseTilt(DevData);
         if (tiltSuccess == 2) {
           colourFound = 2;
@@ -142,22 +148,33 @@ void loop() {
       }
     }
     if (!tiltCount || !colourFound) {
-      Serial.println("No Tilts Found.");
+      DPRINTLNF("No Tilts Found.");
     }
     else {
-      char strPayload[120];
+      bool status;
+      uint8_t strPayload[120];
       char strDevGravity[8];
       dtostrf(*DevGravity, 4, 3, strDevGravity);
       char strDevTemp[8];
       dtostrf(*DevTemp, 4, 2, strDevTemp);
-      sprintf(strPayload, 
-      "{\"currentTime\":\"1970-01-01 00:00:01\","
-      "\"SG\":\"%s\","
-      "\"colour\":\"%s\","
-      "\"temperature\":\"%s\"}"
-      , strDevGravity, *DevColour, strDevTemp);
-      publishTelemetry(strPayload);
-      Serial.println(strPayload);
+      tiltmsg message = tiltmsg_init_zero;
+      pb_ostream_t stream = pb_ostream_from_buffer(strPayload, sizeof(strPayload));
+      message.specificGravity = *DevGravity;
+      message.temperature = *DevTemp;
+      message.colour = tiltmsg_colour_type(*devColourNum);
+      message.timeStamp = 0;
+      status = pb_encode(&stream, tiltmsg_fields, &message);
+      DPRINTF("Bytes Written: ");
+      DPRINTLN(stream.bytes_written);
+      DPRINTF("Message: ");
+      for(int i = 0; i<stream.bytes_written; i++){
+        DPRINTFMT("%02X",strPayload[i]);
+      }
+      if (!status) {
+        printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+      }
+      // publishTelemetry(strPayload);
+      // DEBUG_PRINTLN(strPayload);
     }
   }
 }

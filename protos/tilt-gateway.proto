@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+message tiltmsg {
+    enum colour_type {
+        UNKNOWN = 0;
+        RED = 1;
+        GREEN = 2;
+        BLACK = 3;
+        PURPLE = 4;
+        ORANGE = 5;
+        BLUE = 6;
+        YELLOW = 7;
+        PINK = 8;
+      }
+    colour_type colour = 1;
+    float temperature = 2;
+    float specificGravity = 3;
+    int32 timeStamp = 4;
+}
