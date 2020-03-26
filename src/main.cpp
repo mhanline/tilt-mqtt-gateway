@@ -18,7 +18,6 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 #define Celsius true
 
 int repeatColour = 0;
-char DevColour[7];
 unsigned long lastMillis = 0;
 BLEScan* pBLEScan;
 
