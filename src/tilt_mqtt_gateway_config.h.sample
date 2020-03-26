@@ -15,28 +15,27 @@
 // This file contains your configuration used to connect to Cloud IoT Core
 
 // Wifi network details.
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASS";
+TO-DO: const char* ssid = "YOUR_WIFI_SSID";
+TO-DO: const char* password = "YOUR_WIFI_PASS";
 
 // Cloud iot details.
-const char* project_id = "YOUR_PROJECT_ID";
-const char* location = "us-central1";
-const char* registry_id = "YOUR_REGISTRY_ID";
-const char* device_id = "YOUR_DEVICE_ID";
+TO-DO: const char* project_id = "YOUR_PROJECT_ID";
+TO-DO: const char* location = "us-central1";
+TO-DO: const char* registry_id = "YOUR_REGISTRY_ID";
+TO-DO: const char* device_id = "YOUR_DEVICE_ID";
 
 // Configuration for NTP
 const char* ntp_primary = "pool.ntp.org";
 const char* ntp_secondary = "time.nist.gov";
 
-// To get the private key run (where private-key.pem is the ec private key
-// used to create the certificate uploaded to google cloud iot):
-// openssl ec -in <private-key.pem> -noout -text
-// and copy priv: part.
+// Generate and enter the private key below.
+// See: https://github.com/mhanline/tilt-pubsub-ingest/README.md
+// for the guide on setting up Google Cloud IoT Core with this project
 // The key length should be exactly the same as the key length bellow (32 pairs
 // of hex digits). If it's bigger and it starts with "00:" delete the "00:". If
 // it's smaller add "00:" to the start. If it's too big or too small something
 // is probably wrong with your key.
-const char *private_key_str =
+TO-DO: const char *private_key_str =
     ""
     ""
     "";

@@ -185,6 +185,10 @@ bool publishTelemetry(String subfolder, String data) {
   return mqtt->publishTelemetry(subfolder, data);
 }
 
+bool publishTelemetry(const char* data, int length) {
+  return mqtt->publishTelemetry(data, length);
+}
+
 void connect() {
   connectWifi();
   mqtt->mqttConnect();

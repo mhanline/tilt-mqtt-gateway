@@ -6,7 +6,7 @@
 // DPRINTLN("Testing123");                          Serial.println("Testing123");  
 // DPRINTLN(0xC0FFEEul,DEC);                        Serial.println(0xC0FFEEul,DEC);
 // DPRINTLN(12648430ul,HEX);                        Serial.println(12648430ul,HEX);
-// DPRINTLNF("This message came from your flash");  Serial.println(F("This message came from your flash"));
+// DPRINTLNF("This message came from flash");       Serial.println(F("This message came from your flash"));
 // DPRINT(myVariable);                              Serial.print(myVariable);
 // DELAY(100);                                      delay(100);
 // PINMODE(9600);                                   pinMode(9600);
