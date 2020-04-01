@@ -30,12 +30,14 @@ const char* ntp_secondary = "time.nist.gov";
 
 // Generate and enter the private key below.
 // See: https://github.com/mhanline/tilt-pubsub-ingest/README.md
-// for the guide on setting up Google Cloud IoT Core with this project
-// The key length should be exactly the same as the key length bellow (32 pairs
+// for the guide on setting up Google Cloud IoT Core with this project.
+// You will need the private key and the output from openssl:
+// openssl ec -in tiltname_ec_private.pem -text -noout
+// The key length should be exactly the same as the key length below (32 pairs
 // of hex digits). If it's bigger and it starts with "00:" delete the "00:". If
 // it's smaller add "00:" to the start. If it's too big or too small something
 // is probably wrong with your key.
-TO-DO: const char *private_key_str =
+const char *private_key_str =
     ""
     ""
     "";
