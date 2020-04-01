@@ -119,7 +119,7 @@ void setup() {
 void loop() {
   checkButton();
   if (!mqttClient->connected()) {
-    DEBUG_PRINTLN("DEB: mqttclient not connected");
+    DPRINTLN("DEB: mqttclient not connected");
     connect();
   }
   mqtt->loop();

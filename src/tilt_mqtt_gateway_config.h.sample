@@ -14,11 +14,7 @@
  *****************************************************************************/
 // This file contains your configuration used to connect to Cloud IoT Core
 
-// Wifi network details.
-TO-DO: const char* ssid = "YOUR_WIFI_SSID";
-TO-DO: const char* password = "YOUR_WIFI_PASS";
-
-// Cloud iot details.
+// Cloud IoT details.
 TO-DO: const char* project_id = "YOUR_PROJECT_ID";
 TO-DO: const char* location = "us-central1";
 TO-DO: const char* registry_id = "YOUR_REGISTRY_ID";
@@ -29,7 +25,7 @@ const char* ntp_primary = "pool.ntp.org";
 const char* ntp_secondary = "time.nist.gov";
 
 // Generate and enter the private key below.
-// See: https://github.com/mhanline/tilt-pubsub-ingest/README.md
+// See: https://github.com/mhanline/tilt-pubsub-ingest/
 // for the guide on setting up Google Cloud IoT Core with this project.
 // You will need the private key and the output from openssl:
 // openssl ec -in tiltname_ec_private.pem -text -noout
@@ -45,7 +41,7 @@ TO-DO: const char *private_key_str =
 // Time (seconds) to expire token += 20 minutes for drift
 const int jwt_exp_secs = 3600; // Maximum 24H (3600*24)
 
-// Use the root certificate to verify tls connection rather than
+// Use the root certificate to verify TLS connection rather than
 // using a fingerprint.
 const char* primary_ca = "-----BEGIN CERTIFICATE-----\n"
     "MIIBxTCCAWugAwIBAgINAfD3nVndblD3QnNxUDAKBggqhkjOPQQDAjBEMQswCQYD\n"
