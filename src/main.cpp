@@ -17,7 +17,7 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 #define bleScanTime (int)5 // Duration to scan for bluetooth devices in seconds
 #define publishTime (int)3570000 // PubSub publish interval (in ms)
 #define Celsius true
-#define TRIGGER_PIN 16 // For AP reset button
+#define TRIGGER_PIN 16 // AP factory reset button
 
 int repeatColour = 0;
 unsigned long lastMillis = 0;
@@ -108,9 +108,8 @@ void setup() {
       Serial.println("Failed to connect");
       // ESP.restart();
   } 
-  else {
-      //if you get here you have connected to the WiFi    
-      Serial.println("connected...yeey :)");
+  else {  
+      Serial.println("WiFi Connected...)");
   }
   setupCloudIoT();
   lastMillis = millis() + publishTime; // Starts an initial publish straight away
@@ -119,7 +118,6 @@ void setup() {
 void loop() {
   checkButton();
   if (!mqttClient->connected()) {
-    DPRINTLN("DEB: mqttclient not connected");
     connect();
   }
   mqtt->loop();

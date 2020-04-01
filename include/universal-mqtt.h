@@ -138,7 +138,6 @@ String jwt;
 // Helpers specific to this board
 ///////////////////////////////
 String getDefaultSensor() {
-  Serial.print("DEB Wifi");
   Serial.println(String(WiFi.RSSI()) + "db");
   return  "Wifi: " + String(WiFi.RSSI()) + "db";
 }
@@ -147,8 +146,7 @@ String getJwt() {
   iat = time(nullptr);
   Serial.println("Refreshing JWT");
   jwt = device->createJWT(iat, jwt_exp_secs);
-  Serial.print("DEB JWT:");
-  Serial.println(jwt);
+  DPRINTLN("JWT: "+ jwt);
   return jwt;
 }
 
@@ -192,7 +190,6 @@ bool publishTelemetry(const char* data, int length) {
 void connect() {
   connectWifi();
   mqtt->mqttConnect();
-  Serial.println("DEB: void connect");
 }
 
 void setupCloudIoT() {
