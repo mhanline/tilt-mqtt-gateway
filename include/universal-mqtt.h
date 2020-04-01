@@ -138,6 +138,8 @@ String jwt;
 // Helpers specific to this board
 ///////////////////////////////
 String getDefaultSensor() {
+  Serial.print("DEB Wifi");
+  Serial.println(String(WiFi.RSSI()) + "db");
   return  "Wifi: " + String(WiFi.RSSI()) + "db";
 }
 
@@ -145,12 +147,17 @@ String getJwt() {
   iat = time(nullptr);
   Serial.println("Refreshing JWT");
   jwt = device->createJWT(iat, jwt_exp_secs);
+  Serial.print("DEB JWT:");
+  Serial.println(jwt);
   return jwt;
 }
 
 void setupWifi() {
-  Serial.println("Starting wifi");
+  Serial.println("DEB setupWifi shouldn't be used");
+}
 
+/* void setupWifi() {
+  Serial.println("Starting wifi");
   WiFi.mode(WIFI_STA);
   // WiFi.setSleep(false); // May help with disconnect? Seems to have been removed from WiFi
   WiFi.begin(ssid, password);
@@ -164,7 +171,7 @@ void setupWifi() {
   while (time(nullptr) < 1510644967) {
     delay(10);
   }
-}
+} */
 
 void connectWifi() {
   Serial.print("checking wifi...");
@@ -172,6 +179,7 @@ void connectWifi() {
     Serial.print(".");
     delay(1000);
   }
+  Serial.println("DEB: CONNECTED");
 }
 
 ///////////////////////////////
@@ -192,6 +200,7 @@ bool publishTelemetry(const char* data, int length) {
 void connect() {
   connectWifi();
   mqtt->mqttConnect();
+  Serial.println("DEB: void connect");
 }
 
 void setupCloudIoT() {
@@ -199,12 +208,13 @@ void setupCloudIoT() {
       project_id, location, registry_id, device_id,
       private_key_str);
 
-  setupWifi();
+  // setupWifi(); 
   netClient = new WiFiClientSecure();
   mqttClient = new MQTTClient(512);
   mqttClient->setOptions(180, true, 1000); // keepAlive, cleanSession, timeout
   mqtt = new CloudIoTCoreMqtt(mqttClient, netClient, device);
   mqtt->startMQTT();
+  Serial.println("DEB: void setupCloudIoT");
 }
 #endif //__ESP32_MQTT_H__
 

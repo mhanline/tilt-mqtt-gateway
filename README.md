@@ -17,8 +17,8 @@ git clone https://github.com/mhanline/tilt-mqtt-gateway.git
 ```
 mv src/tilt_mqtt_gateway_config.h.sample src/tilt_mqtt_gateway_config.h
 ```
-Edit src/tilt_mqtt_gateway_config.h and modify the lines starting with TO-TO:
+Edit src/tilt_mqtt_gateway_config.h and modify the lines starting with TO-DO:
 
 3. Google Cloud IoT Core setup
-For the remainder of setting up Cloud IoT Core, see https://github.com/mhanline/tilt-pubsub-ingest/README.md.
+For the remainder of setting up Cloud IoT Core, see https://github.com/mhanline/tilt-pubsub-ingest/blob/master/README.md
 You will need a private key which can be followed using the related project.

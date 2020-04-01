@@ -10,12 +10,14 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 #include "pb_common.h"
 #include "pb.h"
 #include "pb_encode.h"
+#include <WiFiManager.h>
 
 // User Settings
 
 #define bleScanTime (int)5 // Duration to scan for bluetooth devices in seconds
 #define publishTime (int)3570000 // PubSub publish interval (in ms)
 #define Celsius true
+#define TRIGGER_PIN 16 // For AP reset button
 
 int repeatColour = 0;
 unsigned long lastMillis = 0;
@@ -61,19 +63,67 @@ int parseTilt(String inputData, float *inputTemp, float *inputGravity, uint8_t *
   return 2;
 }
 
+WiFiManager wm;
+
+void checkButton(){
+  if ( digitalRead(TRIGGER_PIN) == LOW ) {
+    // poor mans debounce/press-hold, code not ideal for production
+    delay(50);
+    if( digitalRead(TRIGGER_PIN) == LOW ){
+      Serial.println("Button Pressed");
+      // still holding button for 3000 ms, reset settings
+      delay(3000); // reset delay hold
+      if( digitalRead(TRIGGER_PIN) == LOW ){
+        Serial.println("Button Held");
+        Serial.println("Erasing Config, restarting");
+        wm.resetSettings();
+        ESP.restart();
+      }
+      
+      // start portal w delay
+      Serial.println("Starting config portal");
+      wm.setConfigPortalTimeout(120);
+      
+      if (!wm.startConfigPortal("OnDemandAP","password")) {
+        Serial.println("failed to connect or hit timeout");
+        delay(3000);
+        // ESP.restart();
+      } else {
+        //if you get here you have connected to the WiFi
+        Serial.println("connected...yeey :)");
+      }
+    }
+  }
+}
+
 void setup() {
-  // put your setup code here, to run once:
+  pinMode(TRIGGER_PIN, INPUT_PULLUP);
+  WiFi.mode(WIFI_STA);
   Serial.begin(115200);
+  Serial.setDebugOutput(true);
+
+  bool res;
+  res = wm.autoConnect("tilt-gw-init","tilt-gateway"); // password protected ap
+  if(!res) {
+      Serial.println("Failed to connect");
+      // ESP.restart();
+  } 
+  else {
+      //if you get here you have connected to the WiFi    
+      Serial.println("connected...yeey :)");
+  }
   setupCloudIoT();
   lastMillis = millis() + publishTime; // Starts an initial publish straight away
 }
 
 void loop() {
-  mqtt->loop();
-  delay(10);  // <- fixes some issues with WiFi stability
+  checkButton();
   if (!mqttClient->connected()) {
+    DEBUG_PRINTLN("DEB: mqttclient not connected");
     connect();
   }
+  mqtt->loop();
+  // delay(10);  // <- fixes some issues with WiFi stability
   if ((millis() - lastMillis) > publishTime) {
     lastMillis = millis();
     int deviceCount, tiltCount = 0;
