@@ -5,11 +5,11 @@ Publishes SG and Temp readings to Google Cloud IoT Core via MQTT
 #include <DebugMacros.h>
 #include <BLEDevice.h>
 #include <Arduino.h>
-#include "universal-mqtt.h"
 #include "tilt-gateway.pb.h"
 #include "pb_common.h"
 #include "pb.h"
 #include "pb_encode.h"
+#include "universal-mqtt.h"
 #include <WiFiManager.h>
 
 // User Settings
@@ -23,29 +23,22 @@ int repeatColour = 0;
 unsigned long lastMillis = 0;
 BLEScan* pBLEScan;
 
-void printLocalTime() {
+void returnLocalTime(char strISOTime[]) {
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
     DPRINTF("Failed to obtain time");
     return;
   }
-  DPRINTLN(&timeinfo, "%Y-%m-%d %H:%M:%S");
-}
-
-void messageReceived(String &topic, String &payload) {
-  DPRINTLN("incoming: " + topic + " - " + payload);
+  strftime (strISOTime,20,"%Y-%m-%d %H:%M:%S",&timeinfo);
 }
 
 int parseTilt(String inputData, float *inputTemp, float *inputGravity, uint8_t *inputColourNum) {
   // Determine the Colour
   *inputColourNum = inputData.substring(6, 7).toInt();
-
   // Get the temperature
   *inputTemp = strtol(inputData.substring(32, 36).c_str(), NULL, 16);
-
   // Get the gravity
   *inputGravity = strtol(inputData.substring(36, 40).c_str(), NULL, 16) / 1000;
-
   DPRINTF("Device Colour detected: ");
   DPRINTLN(*inputColourNum);
   DPRINTF("Temp: ");
@@ -108,10 +101,14 @@ void setup() {
       Serial.println("Failed to connect");
       // ESP.restart();
   } 
-  else {  
+  else { 
       Serial.println("WiFi Connected...)");
   }
   setupCloudIoT();
+  Serial.print("Local time on setup: ");
+  char strTimeNow[20];
+  returnLocalTime(strTimeNow);
+  Serial.println(strTimeNow);
   lastMillis = millis() + publishTime; // Starts an initial publish straight away
 }
 
@@ -123,6 +120,7 @@ void loop() {
   mqtt->loop();
   // delay(10);  // <- fixes some issues with WiFi stability
   if ((millis() - lastMillis) > publishTime) {
+    Serial.print("Local time: ");
     lastMillis = millis();
     int deviceCount, tiltCount = 0;
     int colourFound = 1;

@@ -23,6 +23,8 @@ TO-DO: const char* device_id = "YOUR_DEVICE_ID";
 // Configuration for NTP
 const char* ntp_primary = "pool.ntp.org";
 const char* ntp_secondary = "time.nist.gov";
+const long  gmtOffset_sec = 3600;
+const int   daylightOffset_sec = 3600;
 
 // Generate and enter the private key below.
 // See: https://github.com/mhanline/tilt-pubsub-ingest/

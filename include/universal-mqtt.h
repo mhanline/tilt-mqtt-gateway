@@ -21,100 +21,6 @@
 #define __ESP32_MQTT_H__
 #endif
 
-#if defined(ARDUINO_SAMD_MKR1000)
-#define __MKR1000_MQTT_H__
-#endif
-
-// This file contains static methods for API requests using Wifi / MQTT
-#ifdef __MKR1000_MQTT_H__
-#include <WiFi101.h>
-#include <WiFiSSLClient.h>
-
-#include <MQTT.h>
-
-#include <CloudIoTCore.h>
-#include <CloudIoTCoreMqtt.h>
-#include "tilt_mqtt_gateway_config.h" // Update this file with your configuration
-
-///////////////////////////////
-// Cloud IoT configuration that you don't need to change
-Client *netClient;
-CloudIoTCoreDevice *device;
-CloudIoTCoreMqtt *mqtt;
-MQTTClient *mqttClient;
-unsigned long iat = 0;
-String jwt;
-
-///////////////////////////////
-// Helpers specific to this board
-///////////////////////////////
-String getDefaultSensor() {
-  return  "Wifi: " + String(WiFi.RSSI()) + "db";
-}
-
-String getJwt() {
-  // Disable software watchdog as these operations can take a while.
-  Serial.println("Refreshing JWT");
-  iat = WiFi.getTime();
-  jwt = device->createJWT(iat, jwt_exp_secs);
-  return jwt;
-}
-
-void setupWifi() {
-  Serial.println("Starting wifi");
-
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
-  }
-
-  Serial.println("Waiting on time sync...");
-  while (WiFi.getTime() < 1510644967) {
-    delay(10);
-  }
-}
-
-void connectWifi() {
-  Serial.print("checking wifi...");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(1000);
-  }
-}
-
-///////////////////////////////
-// Orchestrates various methods from preceeding code.
-///////////////////////////////
-void connect() {
-  connectWifi();
-  mqtt->mqttConnect();
-}
-
-bool publishTelemetry(String data) {
-  return return mqtt->publishTelemetry(data);
-}
-
-bool publishTelemetry(String subfolder, String data) {
-  return mqtt->publishTelemetry(subfolder, data);
-}
-
-void setupCloudIoT() {
-  device = new CloudIoTCoreDevice(
-      project_id, location, registry_id, device_id,
-      private_key_str);
-
-  setupWifi();
-  netClient = new WiFiSSLClient();
-
-  mqttClient = new MQTTClient(512);
-  mqttClient->setOptions(180, true, 1000); // keepAlive, cleanSession, timeout
-  mqtt = new CloudIoTCoreMqtt(mqttClient, netClient, device);
-  mqtt->startMQTT();
-}
-#endif //__MKR1000_MQTT_H__
-
-
 #ifdef __ESP32_MQTT_H__
 #include <Client.h>
 #include <WiFi.h>
@@ -151,13 +57,11 @@ String getJwt() {
 }
 
 void setupWifi() {
-  Serial.println("Starting wifi");
-  Serial.println("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(100);
   }
 
-  configTime(0, 0, ntp_primary, ntp_secondary);
+  configTime(gmtOffset_sec, daylightOffset_sec, ntp_primary, ntp_secondary);
   Serial.println("Waiting on time sync...");
   while (time(nullptr) < 1510644967) {
     delay(10);
@@ -170,6 +74,10 @@ void connectWifi() {
     Serial.print(".");
     delay(1000);
   }
+}
+
+void messageReceived(String &topic, String &payload) {
+  DPRINTLN("incoming: " + topic + " - " + payload);
 }
 
 ///////////////////////////////
@@ -262,7 +170,7 @@ void setupWifi() {
     delay(100);
   }
 
-  configTime(0, 0, ntp_primary, ntp_secondary);
+  configTime(gmtOffset_sec, daylightOffset_sec, ntp_primary, ntp_secondary);
   Serial.println("Waiting on time sync...");
   while (time(nullptr) < 1510644967) {
     delay(10);
