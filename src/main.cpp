@@ -23,15 +23,6 @@ int repeatColour = 0;
 unsigned long lastMillis = 0;
 BLEScan* pBLEScan;
 
-void returnLocalTime(char strISOTime[]) {
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    DPRINTF("Failed to obtain time");
-    return;
-  }
-  strftime (strISOTime,20,"%Y-%m-%d %H:%M:%S",&timeinfo);
-}
-
 int parseTilt(String inputData, float *inputTemp, float *inputGravity, uint8_t *inputColourNum) {
   // Determine the Colour
   *inputColourNum = inputData.substring(6, 7).toInt();
@@ -62,28 +53,28 @@ void checkButton(){
   if ( digitalRead(TRIGGER_PIN) == LOW ) {
     // poor mans debounce/press-hold, code not ideal for production
     delay(50);
-    if( digitalRead(TRIGGER_PIN) == LOW ){
-      Serial.println("Button Pressed");
+    if(digitalRead(TRIGGER_PIN) == LOW ){
+      DPRINTLNF("Button Pressed");
       // still holding button for 3000 ms, reset settings
       delay(3000); // reset delay hold
-      if( digitalRead(TRIGGER_PIN) == LOW ){
-        Serial.println("Button Held");
-        Serial.println("Erasing Config, restarting");
+      if(digitalRead(TRIGGER_PIN) == LOW ){
+        DPRINTLNF("Button Held");
+        DPRINTLNF("Erasing Config, restarting");
         wm.resetSettings();
         ESP.restart();
       }
       
       // start portal w delay
-      Serial.println("Starting config portal");
+      DPRINTLNF("Starting config portal");
       wm.setConfigPortalTimeout(120);
       
       if (!wm.startConfigPortal("OnDemandAP","password")) {
-        Serial.println("failed to connect or hit timeout");
+        DPRINTLNF("failed to connect or hit timeout");
         delay(3000);
         // ESP.restart();
       } else {
         //if you get here you have connected to the WiFi
-        Serial.println("connected...yeey :)");
+        DPRINTLNF("connected...yeey :)");
       }
     }
   }
@@ -105,10 +96,6 @@ void setup() {
       Serial.println("WiFi Connected...)");
   }
   setupCloudIoT();
-  Serial.print("Local time on setup: ");
-  char strTimeNow[20];
-  returnLocalTime(strTimeNow);
-  Serial.println(strTimeNow);
   lastMillis = millis() + publishTime; // Starts an initial publish straight away
 }
 
@@ -120,7 +107,6 @@ void loop() {
   mqtt->loop();
   // delay(10);  // <- fixes some issues with WiFi stability
   if ((millis() - lastMillis) > publishTime) {
-    Serial.print("Local time: ");
     lastMillis = millis();
     int deviceCount, tiltCount = 0;
     int colourFound = 1;
@@ -152,10 +138,12 @@ void loop() {
         uint8_t strPayload[120];
         tiltmsg message = tiltmsg_init_zero;
         pb_ostream_t stream = pb_ostream_from_buffer(strPayload, sizeof(strPayload));
+        time_t unixTNow;
+        time(&unixTNow);
         message.specificGravity = DevGravity;
         message.temperature = DevTemp;
         message.colour = tiltmsg_colour_type(devColourNum);
-        message.timeStamp = 0;
+        message.timeStamp = unixTNow;
         status = pb_encode(&stream, tiltmsg_fields, &message);
         DPRINTF("Bytes Written: ");
         DPRINTLN(stream.bytes_written);

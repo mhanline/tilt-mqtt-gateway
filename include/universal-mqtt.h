@@ -61,7 +61,7 @@ void setupWifi() {
     delay(100);
   }
 
-  configTime(gmtOffset_sec, daylightOffset_sec, ntp_primary, ntp_secondary);
+  configTime(0, 0, ntp_primary, ntp_secondary);
   Serial.println("Waiting on time sync...");
   while (time(nullptr) < 1510644967) {
     delay(10);
