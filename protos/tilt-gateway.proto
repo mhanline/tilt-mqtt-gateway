@@ -12,8 +12,10 @@ message tiltmsg {
         YELLOW = 7;
         PINK = 8;
       }
-    colour_type colour = 1;
-    float temperature = 2;
-    float specificGravity = 3;
-    int32 timeStamp = 4;
+    uint32 version = 1;
+    colour_type colour = 2;
+    uint32 temperature = 3;
+    uint32 specificGravity = 4;
+    uint32 timeStamp = 5;
+    uint32 txPower = 6;
 }
